@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>HSL Color Selector and Image Generator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            display: flex;
+            height: 100vh;
+        }
+        .left-side {
+            width: 20%;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .right-side {
+            width: 80%;
+            padding: 150px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .color-selector {
+            text-align: center;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            max-width: 300px;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .color-display {
+            width: 120px;
+            height: 120px;
+            margin: 20px auto;
+            border-radius: 50%;
+            border: 3px solid #ddd;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            transition: background-color 0.3s ease;
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            appearance: none;
+            height: 8px;
+            border-radius: 5px;
+            background: #ddd;
+            outline: none;
+            opacity: 0.8;
+            transition: opacity .2s;
+            margin-bottom: 10px;
+        }
+        input[type="range"]:hover {
+            opacity: 1;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #007bff;
+            cursor: pointer;
+        }
+        .color-list {
+            margin-top: 20px;
+        }
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+        button {
+            padding: 8px 15px;
+            font-size: 14px;
+            cursor: pointer;
+            border-radius: 5px;
+            border: none;
+            background-color: #007bff;
+            color: white;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ddd;
+            cursor: not-allowed;
+        }
+        #myCanvas {
+            border: 1px solid #ccc;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: auto;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="left-side">
+        <div class="color-selector">
+            <h2>HSL Color Selector</h2>
+
+            <label for="hue">Hue: </label>
+            <input type="range" id="hue" min="0" max="360" value="180">
+            <span id="hue-value">180</span><br><br>
+
+            <label for="saturation">Saturation: </label>
+            <input type="range" id="saturation" min="0" max="100" value="50">
+            <span id="saturation-value">50</span>%<br><br>
+
+            <label for="lightness">Lightness: </label>
+            <input type="range" id="lightness" min="0" max="100" value="50">
+            <span id="lightness-value">50</span>%<br><br>
+
+            <div class="color-display" id="color-display"></div>
+
+            <div class="button-group">
+                <button onclick="confirmColor()" id="confirm-btn">Confirm Color</button>
+                <button onclick="restartSelection()" id="restart-btn" disabled>Restart Selection</button>
+            </div>
+
+            <div class="color-list" id="color-list">
+                <h3>Selected Colors:</h3>
+            </div>
+        </div>
+    </div>
+    <div class="right-side">
+        <canvas id="myCanvas"></canvas>
+    </div>
+</div>
+
+<script>
+    // Define global variables
+    const base_colors_rgb = [
+        [0, 255, 255],    // cyan
+        [255, 0, 255],    // magenta
+        [255, 255, 0],    // yellow
+        [0, 0, 0],        // black
+        [255, 255, 255],  // white
+    ];
+
+    const kernel_size = 1;
+    const inner_dim = 200;
+    const outer_padding = 100;
+
+    function weightedRandom(weights) {
+        let total = weights.reduce((a, b) => a + b, 0);
+        const threshold = Math.random() * total;
+        let cumulativeSum = 0;
+        for (let i = 0; i < weights.length; i++) {
+            cumulativeSum += weights[i];
+            if (cumulativeSum >= threshold) {
+                return i;
+            }
+        }
+        return weights.length - 1;
+    }
+
+    function sample_color(color_probs) {
+        const index = weightedRandom(color_probs);
+        return base_colors_rgb[index];
+    }
+
+    function randn_bm(mean, std_dev) {
+        let u = 0, v = 0;
+        while(u === 0) u = Math.random();
+        while(v === 0) v = Math.random();
+        let num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+        num = num * std_dev + mean;
+        return num;
+    }
+
+    function generate_map(color, width, height) {
+        width = Math.floor(width);
+        height = Math.floor(height);
+        let [H, S, L] = color;
+
+        // Adjust HSL values if needed
+        if (H < 0) H += 360;
+        if (H >= 360) H -= 360;
+        S = Math.min(Math.max(S, 0), 1);
+        L = Math.min(Math.max(L, 0), 1);
+
+        // Hue constraints
+        let yr, cr, mr;
+        if (H <= 60) {
+            yr = (H + 60) / 120;
+            cr = 0;
+            mr = (60 - H) / 120;
+        } else if (H > 60 && H <= 180) {
+            yr = (180 - H) / 120;
+            cr = (H - 60) / 120;
+            mr = 0;
+        } else if (H > 180 && H < 300) {
+            yr = 0;
+            cr = (300 - H) / 120;
+            mr = (H - 180) / 120;
+        } else {
+            yr = (H - 300) / 120;
+            cr = 0;
+            mr = (420 - H) / 120;
+        }
+
+        // Lightness and Saturation constraints
+        let wr, br;
+        if (L <= 0.5) {
+            wr = Math.max(0, L - S / 2);
+            br = Math.min(1, 1 - 2 * L + wr);
+        } else {
+            br = Math.max(0, 1 - L - S / 2);
+            wr = Math.min(1, 2 * L - 1 + br);
+        }
+
+        // Normalize yr, cr, mr based on Saturation
+        const factor = 1 - br - wr;
+        yr *= factor;
+        cr *= factor;
+        mr *= factor;
+
+        const color_probs = [cr, mr, yr, br, wr];
+
+        const quantized_image_map = [];
+        for (let i = 0; i < height; i++) {
+            const curr_row = [];
+            for (let j = 0; j < width; j++) {
+                const curr_color = sample_color(color_probs);
+                for (let x = 0; x < kernel_size; x++) {
+                    curr_row.push(curr_color);
+                }
+            }
+            for (let x = 0; x < kernel_size; x++) {
+                quantized_image_map.push([...curr_row]);
+            }
+        }
+
+        return quantized_image_map;
+    }
+
+    function draw_center_figure(color1, color2, color3, color4) {
+        const inner_up = generate_map(
+            color1,
+            inner_dim,
+            inner_dim / 2
+        );
+        const inner_down = generate_map(
+            color2,
+            inner_dim,
+            inner_dim / 2
+        );
+        const outer_up = generate_map(
+            color3,
+            inner_dim + 2 * outer_padding,
+            inner_dim / 2 + outer_padding
+        );
+        const outer_down = generate_map(
+            color4,
+            inner_dim + 2 * outer_padding,
+            inner_dim / 2 + outer_padding
+        );
+
+        const final_outer = outer_up.concat(outer_down);
+        const final_inner = inner_up.concat(inner_down);
+
+        const begin = outer_padding * kernel_size;
+        const end = (outer_padding + inner_dim) * kernel_size;
+
+        for (let i = begin; i < end; i++) {
+            for (let j = begin; j < end; j++) {
+                final_outer[i][j] = final_inner[i - begin][j - begin];
+            }
+        }
+
+        return final_outer;
+    }
+
+    function draw_surround_figure(
+        upper_depending_color_1 = null,
+        upper_depending_color_2 = null,
+        lower_depending_color_1 = null,
+        lower_depending_color_2 = null
+    ) {
+        // decide lightness
+        let L = Math.max(Math.min(1, randn_bm(0.5, 0.1)), 0);
+        let color1 = [Math.random() * 360, Math.random(), L];
+        let color2 = [Math.random() * 360, Math.random(), L];
+        let color3 = [Math.random() * 360, Math.random(), L];
+        let color4 = [Math.random() * 360, Math.random(), L];
+
+        // upper outer color
+        if (upper_depending_color_1 !== null) {
+            let hue_or_saturation = Math.random();
+            if (hue_or_saturation > 0.5) {
+                color3[0] = upper_depending_color_1[0];
+            } else {
+                color3[1] = upper_depending_color_1[1];
+            }
+            if (upper_depending_color_2 !== null) {
+                if (hue_or_saturation > 0.5) {
+                    color3[1] = upper_depending_color_2[1];
+                } else {
+                    color3[0] = upper_depending_color_2[0];
+                }
+            }
+        }
+
+        // lower outer color
+        if (lower_depending_color_1 !== null) {
+            let hue_or_saturation = Math.random();
+            if (hue_or_saturation > 0.5) {
+                color4[0] = lower_depending_color_1[0];
+            } else {
+                color4[1] = lower_depending_color_1[1];
+            }
+            if (lower_depending_color_2 !== null) {
+                if (hue_or_saturation > 0.5) {
+                    color4[1] = lower_depending_color_2[1];
+                } else {
+                    color4[0] = lower_depending_color_2[0];
+                }
+            }
+        }
+
+        const inner_up = generate_map(
+            color1,
+            inner_dim,
+            inner_dim / 2
+        );
+        const inner_down = generate_map(
+            color2,
+            inner_dim,
+            inner_dim / 2
+        );
+        const outer_up = generate_map(
+            color3,
+            inner_dim + 2 * outer_padding,
+            inner_dim / 2 + outer_padding
+        );
+        const outer_down = generate_map(
+            color4,
+            inner_dim + 2 * outer_padding,
+            inner_dim / 2 + outer_padding
+        );
+
+        const final_outer = outer_up.concat(outer_down);
+        const final_inner = inner_up.concat(inner_down);
+
+        const begin = outer_padding * kernel_size;
+        const end = (outer_padding + inner_dim) * kernel_size;
+
+        for (let i = begin; i < end; i++) {
+            for (let j = begin; j < end; j++) {
+                final_outer[i][j] = final_inner[i - begin][j - begin];
+            }
+        }
+
+        return [final_outer, [color3, color4]];
+    }
+
+    function draw_center_column(color1, color2, color3, color4) {
+        // record colors
+        let grid_colors = {};
+        grid_colors["center"] = [color3, color4];
+
+        // center img
+        const center_img = draw_center_figure(color1, color2, color3, color4);
+
+        // up
+        const [up_img, up_colors] = draw_surround_figure(
+            null,
+            null,
+            grid_colors["center"][0]
+        );
+        grid_colors["up"] = up_colors;
+
+        // down
+        const [down_img, down_colors] = draw_surround_figure(
+            grid_colors["center"][1]
+        );
+        grid_colors["down"] = down_colors;
+
+        // concat
+        const center_column = up_img.concat(center_img, down_img);
+        return [center_column, grid_colors];
+    }
+
+    function draw_surround_column(grid_colors) {
+        // Deep copy grid_colors to avoid mutation
+        grid_colors = JSON.parse(JSON.stringify(grid_colors));
+
+        // center
+        const [center_img, center_colors] = draw_surround_figure(
+            grid_colors["center"][0],
+            null,
+            grid_colors["center"][1],
+            null
+        );
+        grid_colors["center"] = center_colors;
+
+        // up
+        const [up_img, up_colors] = draw_surround_figure(
+            grid_colors["up"][0],
+            null,
+            grid_colors["up"][1],
+            grid_colors["center"][0]
+        );
+        grid_colors["up"] = up_colors;
+
+        // down
+        const [down_img, down_colors] = draw_surround_figure(
+            grid_colors["center"][1],
+            grid_colors["down"][0],
+            grid_colors["down"][1],
+            null,
+        );
+        grid_colors["down"] = down_colors;
+
+        // concat
+        const center_column = up_img.concat(center_img, down_img);
+        return [center_column, grid_colors];
+    }
+
+    function draw_all_figures(color1, color2, color3, color4) {
+        const [center_column, center_colors] = draw_center_column(color1, color2, color3, color4);
+        const [left_column, left_colors] = draw_surround_column(center_colors);
+        const [right_column, right_colors] = draw_surround_column(center_colors);
+        const [left2_column, left2_colors] = draw_surround_column(left_colors);
+        const [right2_column, right2_colors] = draw_surround_column(right_colors);
+
+        // concat columns horizontally
+        const all_figure = [];
+        for (let i = 0; i < center_column.length; i++) {
+            all_figure.push(
+                [].concat(
+                    left2_column[i],
+                    left_column[i],
+                    center_column[i],
+                    right_column[i],
+                    right2_column[i]
+                )
+            );
+        }
+        return all_figure;
+    }
+
+    function drawImageOnCanvas(canvas, imageArray) {
+        const context = canvas.getContext('2d');
+        const width = imageArray[0].length;
+        const height = imageArray.length;
+
+        // Set the canvas's internal dimensions to the image size
+        canvas.width = width;
+        canvas.height = height;
+
+        const imageData = context.createImageData(width, height);
+        const data = imageData.data;
+
+        let index = 0;
+        for (let i = 0; i < height; i++) {
+            const row = imageArray[i];
+            for (let j = 0; j < width; j++) {
+                const [r, g, b] = row[j];
+                data[index++] = r;   // Red
+                data[index++] = g;   // Green
+                data[index++] = b;   // Blue
+                data[index++] = 255; // Alpha
+            }
+        }
+
+        context.putImageData(imageData, 0, 0);
+
+        // Make the canvas responsive by adjusting its displayed size
+        canvas.style.width = '100%';
+        canvas.style.height = 'auto';
+    }
+
+    // Existing code for color selector
+
+    let colors = [];
+    let isFirstColorSelected = false;
+    let fixedLightness = null;
+
+    const hue = document.getElementById('hue');
+    const saturation = document.getElementById('saturation');
+    const lightness = document.getElementById('lightness');
+    const hueValue = document.getElementById('hue-value');
+    const saturationValue = document.getElementById('saturation-value');
+    const lightnessValue = document.getElementById('lightness-value');
+    const colorDisplay = document.getElementById('color-display');
+    const colorList = document.getElementById('color-list');
+    const confirmBtn = document.getElementById('confirm-btn');
+    const restartBtn = document.getElementById('restart-btn');
+
+    function updateColor() {
+        const h = hue.value;
+        const s = saturation.value;
+        const l = lightness.value;
+
+        // Update labels
+        hueValue.textContent = h;
+        saturationValue.textContent = s;
+        lightnessValue.textContent = l;
+
+        // Update color display box
+        colorDisplay.style.backgroundColor = `hsl(${h}, ${s}%, ${l}%)`;
+
+        // Update slider backgrounds
+        // Hue slider gradient
+        hue.style.background = `linear-gradient(to right, ${Array.from({length: 361}, (_, i) => `hsl(${i}, ${s}%, ${l}%)`).join(", ")})`;
+
+        // Saturation slider gradient
+        saturation.style.background = `linear-gradient(to right, hsl(${h}, 0%, ${l}%), hsl(${h}, 100%, ${l}%))`;
+
+        // Lightness slider gradient
+        lightness.style.background = `linear-gradient(to right, hsl(${h}, ${s}%, 0%), hsl(${h}, ${s}%, 50%), hsl(${h}, ${s}%, 100%))`;
+    }
+
+    function confirmColor() {
+        const h = parseFloat(hue.value);
+        const s = parseFloat(saturation.value) / 100;
+        const l = parseFloat(lightness.value) / 100;
+
+        // Add selected color to array
+        colors.push([h, s, l]);
+
+        // Display the confirmed color in the list
+        const colorItem = document.createElement("div");
+        colorItem.textContent = `Color ${colors.length}: hsl(${h}, ${saturation.value}%, ${lightness.value}%)`;
+        colorItem.style.backgroundColor = `hsl(${h}, ${saturation.value}%, ${lightness.value}%)`;
+        colorItem.style.color = l < 0.5 ? "#fff" : "#000";
+        colorItem.style.padding = "5px";
+        colorItem.style.marginTop = "5px";
+        colorItem.style.borderRadius = "5px";
+        colorList.appendChild(colorItem);
+
+        // Fix lightness for subsequent colors if this is the first color
+        if (!isFirstColorSelected) {
+            isFirstColorSelected = true;
+            fixedLightness = parseFloat(lightness.value);
+            lightness.disabled = true;
+        }
+
+        // Check if all colors are selected
+        if (colors.length >= 4) {
+            confirmBtn.disabled = true;
+            restartBtn.disabled = false;
+
+            // Generate the image
+            const [color1, color2, color3, color4] = colors;
+            const final_image = draw_all_figures(color1, color2, color3, color4);
+
+            // Draw the image on the canvas
+            const canvas = document.getElementById('myCanvas');
+            drawImageOnCanvas(canvas, final_image);
+
+            return;
+        }
+
+        // Reset sliders for next color, but maintain fixed lightness
+        hue.value = 180;
+        saturation.value = 50;
+        lightness.value = fixedLightness;
+        updateColor();
+    }
+
+    function restartSelection() {
+        // Reset all parameters
+        colors = [];
+        isFirstColorSelected = false;
+        fixedLightness = null;
+
+        // Clear color list
+        colorList.innerHTML = "<h3>Selected Colors:</h3>";
+
+        // Reset sliders and enable lightness
+        hue.value = 180;
+        saturation.value = 50;
+        lightness.value = 50;
+        lightness.disabled = false;
+        updateColor();
+
+        // Enable confirm button and disable restart button
+        confirmBtn.disabled = false;
+        restartBtn.disabled = true;
+
+        // Clear the canvas
+        const canvas = document.getElementById('myCanvas');
+        const context = canvas.getContext('2d');
+        context.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    hue.addEventListener('input', updateColor);
+    saturation.addEventListener('input', updateColor);
+    lightness.addEventListener('input', updateColor);
+
+    // Initialize color display
+    updateColor();
+</script>
+
+</body>
+</html>
