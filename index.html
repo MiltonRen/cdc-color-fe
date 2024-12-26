@@ -184,6 +184,22 @@ function setFeedback() {
   colorFour.style = `color: ${pickerFour.color.hexString}`
   colorFour.innerText = pickerFour.color.hexString
   document.getElementById("feedback").appendChild(colorFour)
+
+  const colors = [pickerOne.color.hexString, pickerTwo.color.hexString, pickerThree.color.hexString, pickerFour.color.hexString];
+
+  fetch('/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ colors: colors })
+  })
+  .then(response => response.json())
+  .then(data => {
+      if (data.status) {
+          console.log(data.status);
+      } else {
+          console.error('Error generating image');
+      }
+  });
 }
 </script>
 
