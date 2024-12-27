@@ -186,7 +186,7 @@ function setFeedback() {
   document.getElementById("feedback").appendChild(colorFour)
 
   const colors = [pickerOne.color.hexString, pickerTwo.color.hexString, pickerThree.color.hexString, pickerFour.color.hexString];
-
+                        
   fetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
