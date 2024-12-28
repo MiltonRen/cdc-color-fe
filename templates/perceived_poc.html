@@ -72,55 +72,24 @@
 
   .grid {
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
-      gap: 8px;
+      grid-template-columns: repeat(24, 1fr);
+      gap: 0rem;
   }
 
   .color-box {
       aspect-ratio: 1;
-      border: 1px solid #ccc;
-      border-radius: 4px;
+      border: 0px solid #242424;
+      border-radius: 0rem;
       position: relative;
       cursor: pointer;
-      transition: transform 0.2s;
+      transition: transform 0.25s;
   }
 
-  .color-box:hover {
-      transform: scale(1.1);
-  }
-
-  .color-box::before {
-      content: attr(data-color);
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(0, 0, 0, 0.5);
-      color: white;
-      font-size: 12px;
-      opacity: 0;
-      transition: opacity 0.2s;
-  }
-
-  .color-box:hover::before {
-      opacity: 1;
-  }
-
-  .notification {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      padding: 10px 20px;
-      background: #333;
-      color: white;
-      border-radius: 4px;
-      opacity: 0;
-      transition: opacity 0.3s;
-  }
-
-  .notification.visible {
-      opacity: 1;
+  .color-box:active {
+      transform: scale(2.0);
+      border: 0.2rem solid #242424;
+      border-radius: 100rem;
+      z-index: 100;
   }
 </style>
 
@@ -136,8 +105,6 @@
   </div>
 
   <div id="colorGrid" class="grid"></div>
-
-  <div class="notification" id="notification">Color copied to clipboard!</div>
 </body>
 
 <script>
@@ -228,17 +195,30 @@ function rgbToHex(rgb) {
     }).join('');
 }
 
-function generateIsoLightnessColors(inputHex, numColors = 100) {
+function fisherYatesShuffle(arr) {
+  	for (let i = arr.length - 1; i > 0; i--) {
+    	const j = Math.floor(Math.random() * (i + 1));
+    	[arr[i], arr[j]] = [arr[j], arr[i]];
+  	}
+  	return arr;
+}
+
+function generateIsoLightnessColors(inputHex, numColors = 576) {
     const rgb = hexToRgb(inputHex);
     const xyz = rgbToXyz(rgb);
     const [L, ,] = xyzToLab(xyz);
-    
+
     const colors = [];
-    const range = 128;
-    
+    const maxRadius = 128;  // Maximum radius in LAB color space
+    const spiralTurns = 5;  // Number of spiral turns
+
+    var lastHex = null;
+
+    // Generate colors in a spiral pattern with varying radii
     for (let i = 0; i < numColors; i++) {
-        const angle = (i / numColors) * 2 * Math.PI;
-        const radius = range;
+        // Calculate angle and radius using a spiral pattern
+        const angle = (i / numColors) * 2 * Math.PI * spiralTurns;
+        const radius = (i / numColors) * maxRadius;
         
         const a = Math.cos(angle) * radius;
         const b = Math.sin(angle) * radius;
@@ -246,15 +226,22 @@ function generateIsoLightnessColors(inputHex, numColors = 100) {
         const newXyz = labToXyz([L, a, b]);
         const newRgb = xyzToRgb(newXyz);
         
-        if (!newRgb.some(v => isNaN(v))) {
+        // Only add valid RGB colors that are within gamut
+        if (!newRgb.some(v => isNaN(v) || v < 0 || v > 255)) {
             const newHex = rgbToHex(newRgb);
             if (!colors.includes(newHex)) {
                 colors.push(newHex);
+                lastHex = newHex;
             }
         }
     }
     
-    return colors;
+    // If we don't have enough colors, fill in with additional samples
+    while (colors.length < numColors) {
+        colors.push(lastHex);
+    }
+
+    return fisherYatesShuffle(colors);
 }
 
 // UI handling code
@@ -264,14 +251,6 @@ const colorGrid = document.getElementById('colorGrid');
 const selectedColor = document.getElementById('selectedColor');
 const selectedPreview = document.getElementById('selectedPreview');
 const selectedHex = document.getElementById('selectedHex');
-const notification = document.getElementById('notification');
-
-function showNotification() {
-    notification.classList.add('visible');
-    setTimeout(() => {
-        notification.classList.remove('visible');
-    }, 2000);
-}
 
 function updateGrid(color) {
     hexValue.textContent = color;
@@ -286,11 +265,10 @@ function updateGrid(color) {
         box.setAttribute('data-color', hex);
         
         box.addEventListener('click', () => {
-            navigator.clipboard.writeText(hex);
             selectedColor.classList.add('visible');
             selectedPreview.style.backgroundColor = hex;
-            selectedHex.textContent = `${hex} (copied to clipboard)`;
-            showNotification();
+            selectedHex.textContent = hex;
+            document.body.style.backgroundColor = hex;
         });
         
         colorGrid.appendChild(box);
