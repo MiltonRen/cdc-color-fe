@@ -1,6 +1,5 @@
-Dependency: https://iro.js.org/
+FE Dependency: https://iro.js.org/
 
-TODOs
-> integrate with api endpoint
-> try HSL instead of HSV
-> experiment with selecting perceived color instead of 4 wheels
+To run: ```python server.py```, then head to http://127.0.0.1:5000
+
+TODO: experiment with other libraries with HSL support

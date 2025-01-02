@@ -31,74 +31,80 @@
 
 <body class="h-screen antialiased bg-custom-bg text-center">
   <div id="start-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in">
-    <div class="text-4xl font-bold text-white mb-8">
-      CDC Picker Demo
+    <div class="text-4xl font-bold text-white mb-32">
+      Select 4 colors
     </div>
-    <button class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-800 disabled:text-gray-500"
+    <button class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-800 disabled:text-gray-500"
             onclick="document.getElementById('start-wrapper').classList.add('hidden');document.getElementById('picker-one-wrapper').classList.remove('hidden');document.getElementById('button-one').disabled = true;document.getElementById('button-two').disabled = true;document.getElementById('button-three').disabled = true;document.getElementById('button-four').disabled = true;">
-      Let's go!
+      Begin
     </button>
   </div>
 
   <div id="picker-one-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in hidden">
-    <div class="text-2xl text-white mb-8">Now, pick your <b>first</b> color and lightness</div>
+    <div class="text-2xl text-white font-bold mb-8">Select the first color and lightness</div>
     <div id="picker-one" class="mb-12">
     </div>
-    <button disabled id="button-one" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-700 disabled:text-gray-500"
+    <button disabled id="button-one" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-700 disabled:text-gray-500"
             onclick="document.getElementById('picker-one-wrapper').classList.add('hidden');document.getElementById('picker-two-wrapper').classList.remove('hidden');">
-      Confirm
+      Next
     </button>
   </div>
 
   <div id="picker-two-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in hidden">
-    <div class="text-2xl text-white mb-8">Now, pick your <b>second</b> color</div>
+    <div class="text-2xl text-white font-bold mb-8">Select the second color</div>
     <div id="picker-two" class="mb-12">
     </div>
-    <button disabled id="button-two" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-700 disabled:text-gray-500"
+    <button disabled id="button-two" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-700 disabled:text-gray-500"
             onclick="document.getElementById('picker-two-wrapper').classList.add('hidden');document.getElementById('picker-three-wrapper').classList.remove('hidden');">
-      Confirm
+      Next
     </button>
   </div>
 
   <div id="picker-three-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in hidden">
-    <div class="text-2xl text-white mb-8">Now, pick your <b>third</b> color</div>
+    <div class="text-2xl text-white font-bold mb-8">Select the third color</div>
     <div id="picker-three" class="mb-12">
     </div>
-    <button disabled id="button-three" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-700 disabled:text-gray-500"
+    <button disabled id="button-three" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-700 disabled:text-gray-500"
             onclick="document.getElementById('picker-three-wrapper').classList.add('hidden');document.getElementById('picker-four-wrapper').classList.remove('hidden');">
-      Confirm
+      Next
     </button>
   </div>
 
   <div id="picker-four-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in hidden">
-    <div class="text-2xl text-white mb-8">Now, pick your <b>last</b> color</div>
+    <div class="text-2xl text-white font-bold mb-8">Select the last color</div>
     <div id="picker-four" class="mb-12">
     </div>
-    <button disabled id="button-four" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-700 disabled:text-gray-500"
-            onclick="setFeedback()">
-      Confirm
+    <button disabled id="button-four" class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-700 disabled:text-gray-500"
+            onclick="setFinishScreen()">
+      Next
     </button>
   </div>
 
   <div id="finish-wrapper" class="flex flex-col justify-center items-center w-full h-full animate-fade-in hidden">
-    <div class="text-2xl text-white mb-4">
-      雪峰 gets these colors to work with:
+    <div class="text-2xl text-white font-bold mb-32">
+      Colors have been received.
     </div>
-    <div id="feedback" class="text-4xl font-bold text-white mb-12 flex flex-wrap justify-center items-center gap-2">
-    </div>
-    <button class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-2 px-4 rounded-full disabled:bg-gray-700 disabled:text-gray-500"
-            onclick="document.getElementById('finish-wrapper').classList.add('hidden');document.getElementById('start-wrapper').classList.remove('hidden');">
-      Start over
+    <button class="bg-gray-100 hover:bg-gray-300 duration-200 text-gray-800 font-bold py-4 px-8 text-2xl rounded-xl disabled:bg-gray-700 disabled:text-gray-500"
+            onclick="restart()">
+      Start Over
     </button>
+  </div>
+
+  <div class="z-100 absolute top-24 left-0 right-0 flex w-full justify-center gap-12">
+    <div id="preview-1" class="h-12 w-12 rounded-full ring-4 ring-white ring-opacity-100"></div>
+    <div id="preview-2" class="h-12 w-12 rounded-full ring-4 ring-white ring-opacity-100"></div>
+    <div id="preview-3" class="h-12 w-12 rounded-full ring-4 ring-white ring-opacity-100"></div>
+    <div id="preview-4" class="h-12 w-12 rounded-full ring-4 ring-white ring-opacity-100"></div>
   </div>
 </body>
 
 <script>
-var pickerWidth = 320
+var pickerWidth = 340
+var borderWidth = 4
 
 var pickerOne = new iro.ColorPicker("#picker-one", {
   width: pickerWidth,
-  borderWidth: 3,
+  borderWidth: borderWidth,
   layout: [
     { 
       component: iro.ui.Wheel
@@ -111,13 +117,14 @@ var pickerOne = new iro.ColorPicker("#picker-one", {
 pickerOne.color.hsl = { h: 100, s: 0, l: 100 };
 pickerOne.on('color:change', function(color) {
   console.log("picker 1: " + color.hexString)
+  document.getElementById("preview-1").style.background = color.hexString
   document.getElementById("button-one").disabled = false
   pickerTwo.setColors([pickerOne.color])
 });
 
 var pickerTwo = new iro.ColorPicker("#picker-two", {
   width: pickerWidth,
-  borderWidth: 3,
+  borderWidth: borderWidth,
   layout: [
     { 
       component: iro.ui.Wheel
@@ -127,13 +134,14 @@ var pickerTwo = new iro.ColorPicker("#picker-two", {
 pickerTwo.color.hsl = { h: 100, s: 0, l: 100 };
 pickerTwo.on('color:change', function(color) {
   console.log("picker 2: " + color.hexString)
+  document.getElementById("preview-2").style.background = color.hexString
   document.getElementById("button-two").disabled = false
   pickerThree.setColors([pickerTwo.color])
 });
 
 var pickerThree = new iro.ColorPicker("#picker-three", {
   width: pickerWidth,
-  borderWidth: 3,
+  borderWidth: borderWidth,
   layout: [
     { 
       component: iro.ui.Wheel
@@ -143,13 +151,14 @@ var pickerThree = new iro.ColorPicker("#picker-three", {
 pickerThree.color.hsl = { h: 100, s: 0, l: 100 };
 pickerThree.on('color:change', function(color) {
   console.log("picker 3: " + color.hexString)
+  document.getElementById("preview-3").style.background = color.hexString
   document.getElementById("button-three").disabled = false
   pickerFour.setColors([pickerThree.color])
 });
 
 var pickerFour = new iro.ColorPicker("#picker-four", {
   width: pickerWidth,
-  borderWidth: 3,
+  borderWidth: borderWidth,
   layout: [
     { 
       component: iro.ui.Wheel
@@ -159,34 +168,14 @@ var pickerFour = new iro.ColorPicker("#picker-four", {
 pickerFour.color.hsl = { h: 100, s: 0, l: 100 };
 pickerFour.on('color:change', function(color) {
   console.log("picker 4: " + color.hexString)
+  document.getElementById("preview-4").style.background = color.hexString
   document.getElementById("button-four").disabled = false
 });
 
-function setFeedback() {
+function setFinishScreen() {
   document.getElementById('picker-four-wrapper').classList.add('hidden');document.getElementById('finish-wrapper').classList.remove('hidden');
 
-  var colorOne = document.createElement("div")
-  colorOne.style = `color: ${pickerOne.color.hexString}`
-  colorOne.innerText = pickerOne.color.hexString
-  document.getElementById("feedback").appendChild(colorOne)
-
-  var colorTwo = document.createElement("div")
-  colorTwo.style = `color: ${pickerTwo.color.hexString}`
-  colorTwo.innerText = pickerTwo.color.hexString
-  document.getElementById("feedback").appendChild(colorTwo)
-
-  var colorThree = document.createElement("div")
-  colorThree.style = `color: ${pickerThree.color.hexString}`
-  colorThree.innerText = pickerThree.color.hexString
-  document.getElementById("feedback").appendChild(colorThree)
-
-  var colorFour = document.createElement("div")
-  colorFour.style = `color: ${pickerFour.color.hexString}`
-  colorFour.innerText = pickerFour.color.hexString
-  document.getElementById("feedback").appendChild(colorFour)
-
   const colors = [pickerOne.color.hexString, pickerTwo.color.hexString, pickerThree.color.hexString, pickerFour.color.hexString];
-                        
   fetch('/generate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -200,6 +189,16 @@ function setFeedback() {
           console.error('Error generating image');
       }
   });
+}
+
+function restart() {
+  document.getElementById("preview-1").style.removeProperty('background');
+  document.getElementById("preview-2").style.removeProperty('background');
+  document.getElementById("preview-3").style.removeProperty('background');
+  document.getElementById("preview-4").style.removeProperty('background');
+
+  document.getElementById('finish-wrapper').classList.add('hidden');
+  document.getElementById('start-wrapper').classList.remove('hidden');
 }
 </script>
 
