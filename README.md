@@ -1,5 +1,8 @@
-FE Dependency: https://iro.js.org/
+### Instructions
+1. Run ```python server.py```
+2. Run ```lsof -i :5000``` to confirm service is up
+3. Run ```ipconfig getifaddr en0``` to get local server address
+4. Visit ```http://${local_server_address}:6969``` from iPad
 
-To run: ```python server.py```, then head to http://127.0.0.1:5000
-
-TODO: experiment with other libraries with HSL support
+### FE Dependencies
+1. https://iro.js.org/

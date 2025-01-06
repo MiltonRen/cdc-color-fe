@@ -42,7 +42,7 @@ def index():
 
 # Run the server in a separate thread
 def run_server():
-    app.run(debug=False, use_reloader=False)
+    app.run(debug=False, use_reloader=False, host='0.0.0.0', port=6969)
 
 
 # Run the Flask server in a separate thread to avoid blocking the GUI window
