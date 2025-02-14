@@ -7,21 +7,22 @@ class quantized_color_generator(object):
     def __init__(self, 
                  inner_dim=10, 
                  outer_padding=5, 
-                 kernel_size=10, 
+                 kernel_size=30, 
                  pixel_size=2,
                  lightness_mode="CIE",
                  debug=False,
                  balance_mode="Lightness",
                  restrict_ligntness=True
                 ):
-
+        
+        # 2*30*20*5=6000
         # canvas size
         self.inner_dim = inner_dim
         self.outer_padding = outer_padding
 
         # default pattern size
         self.kernel_size = kernel_size
-        self.pixel_size = 2
+        self.pixel_size = pixel_size
 
         # default color and lightness
         self.base_colors = [
@@ -35,6 +36,7 @@ class quantized_color_generator(object):
         self.red_lightness = self.rgb_to_lightness(255, 0, 0)
         self.green_lightness = self.rgb_to_lightness(0, 255, 0)
         self.blue_lightness = self.rgb_to_lightness(0, 0, 255)
+        print(self.red_lightness, self.green_lightness, self.blue_lightness)
 
         self.debug=debug
         self.balance_mode = balance_mode
@@ -115,10 +117,7 @@ class quantized_color_generator(object):
     
     def calculate_ratio(self, hue, target_lightness, target_saturation):
         # color part lightness
-        if(max(hue) == 0):
-            return [0,0,0,0,1] # saturation is 0, only black and white
-        
-        if(target_saturation == 0):
+        if(max(hue) == 0 or target_saturation == 0):
             white = target_lightness
             black = 1 - target_lightness
             return [0,0,0,white,black] # saturation is 0, only black and white
@@ -168,14 +167,17 @@ class quantized_color_generator(object):
     def draw_single_hex(self, hex_color, map_width, map_height, verbose=False):
         r, g, b = self.hex_to_rgb(hex_color)
         h, l, s = self.rgb_to_hls(r, g, b)
-
         return self.draw_single_hls(h, l, s, map_width, map_height, verbose)
         
     def draw_single_hls(self, h, l, s, map_width, map_height, verbose=False):
+        print(f"rendering block with lightness {l:.2f}, hue [{h[0]:.2f},{h[1]:.2f},{h[2]:.2f}], saturation {s:.2f}. ")
+
         map_width = int(map_width)
         map_height = int(map_height)
         
         color_probs = self.calculate_ratio(h, l, s)
+        red_ratio, green_ratio, blue_ratio, white_ratio, black_ratio = color_probs[0], color_probs[1], color_probs[2], color_probs[3], color_probs[4]
+        print(f"estimated {red_ratio*100:.2f}% red, {green_ratio*100:.2f}% green, {blue_ratio*100:.2f}% blue, {white_ratio*100:.2f}% white, {black_ratio*100:.2f}% black")
         
         pattern = []
         for i in range(self.kernel_size):
@@ -193,7 +195,7 @@ class quantized_color_generator(object):
         if(verbose):
             origin_image_map = np.array([[[r,g,b] for x in range(map_width * self.kernel_size * self.pixel_size)] for y in range(map_height * self.kernel_size * self.pixel_size)], dtype=np.uint8)
             origin_image_map = Image.fromarray(origin_image_map, mode="RGB")
-            display(origin_image_map)
+            # display(origin_image_map)
     
             result = {
                 "Target Hue" : self.rgb_to_hue(r,g,b),
@@ -214,23 +216,34 @@ class quantized_color_generator(object):
         return full_map, color_probs
     
     def draw_block(self, color1, color2, color3, color4):
-        inner_up, _ = self.draw_single_hex(
-            color1, 
+        r1, g1, b1 = self.hex_to_rgb(color1)
+        h1, l1, s1 = self.rgb_to_hls(r1, g1, b1)
+        r2, g2, b2 = self.hex_to_rgb(color2)
+        h2, l2, s2 = self.rgb_to_hls(r2, g2, b2)
+        r3, g3, b3 = self.hex_to_rgb(color3)
+        h3, l3, s3 = self.rgb_to_hls(r3, g3, b3)
+        r4, g4, b4 = self.hex_to_rgb(color4)
+        h4, l4, s4 = self.rgb_to_hls(r4, g4, b4)
+
+        average_l = (l1 + l2 + l3 + l4) / 4
+
+        inner_up, _ = self.draw_single_hls(
+            h1, average_l, s1,
             map_width = self.inner_dim, 
             map_height = self.inner_dim / 2, 
         )
-        inner_down, _ = self.draw_single_hex(
-            color2, 
+        inner_down, _ = self.draw_single_hls(
+            h2, average_l, s2,
             map_width = self.inner_dim, 
             map_height = self.inner_dim / 2, 
         )
-        outer_up, color_up = self.draw_single_hex(
-            color3, 
+        outer_up, color_up = self.draw_single_hls(
+            h3, average_l, s3,
             map_width = self.inner_dim + 2 * self.outer_padding, 
             map_height = self.inner_dim / 2 + self.outer_padding, 
         )
-        outer_down, color_down = self.draw_single_hex(
-            color4, 
+        outer_down, color_down = self.draw_single_hls(
+            h4, average_l, s4,
             map_width = self.inner_dim + 2 * self.outer_padding, 
             map_height = self.inner_dim / 2 + self.outer_padding, 
         )
