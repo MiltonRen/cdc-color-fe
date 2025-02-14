@@ -1,4 +1,4 @@
-### Instructions
+<!-- ### Instructions
 1. Run ```python server.py```
 2. Run ```lsof -i :5000``` to confirm service is up
 3. Run ```ipconfig getifaddr en0``` to get local server address
@@ -6,3 +6,6 @@
 
 ### FE Dependencies
 1. https://iro.js.org/
+ -->
+
+1. Run ```pyinstaller --onefile --add-data "templates:templates" server.py ``` to rebuild the executable file
