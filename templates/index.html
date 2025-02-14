@@ -4,8 +4,10 @@
   <title>CDC Color Picker</title>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <script src="https://cdn.jsdelivr.net/npm/@jaames/iro@5"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="{{ url_for('static', filename='iro.js') }}"></script>
+  <script src="{{ url_for('static', filename='tailwind.js') }}"></script>
+
   <script>
     tailwind.config = {
       theme: {
@@ -112,7 +114,6 @@ var pickerOne = new iro.ColorPicker("#picker-one", {
 });
 pickerOne.color.hsl = { h: 100, s: 0, l: 100 };
 pickerOne.on('color:change', function(color) {
-  console.log("picker 1: " + color.hexString)
   document.getElementById("preview-1").style.background = color.hexString
   document.getElementById("button-one").disabled = false
   pickerTwo.setColors([pickerOne.color])
@@ -130,7 +131,6 @@ var pickerTwo = new iro.ColorPicker("#picker-two", {
 });
 pickerTwo.color.hsl = { h: 100, s: 0, l: 100 };
 pickerTwo.on('color:change', function(color) {
-  console.log("picker 2: " + color.hexString)
   document.getElementById("preview-2").style.background = color.hexString
   document.getElementById("button-two").disabled = false
   pickerThree.setColors([pickerTwo.color])
@@ -148,7 +148,6 @@ var pickerThree = new iro.ColorPicker("#picker-three", {
 });
 pickerThree.color.hsl = { h: 100, s: 0, l: 100 };
 pickerThree.on('color:change', function(color) {
-  console.log("picker 3: " + color.hexString)
   document.getElementById("preview-3").style.background = color.hexString
   document.getElementById("button-three").disabled = false
   pickerFour.setColors([pickerThree.color])
@@ -166,7 +165,6 @@ var pickerFour = new iro.ColorPicker("#picker-four", {
 });
 pickerFour.color.hsl = { h: 100, s: 0, l: 100 };
 pickerFour.on('color:change', function(color) {
-  console.log("picker 4: " + color.hexString)
   document.getElementById("preview-4").style.background = color.hexString
   document.getElementById("button-four").disabled = false
 });
